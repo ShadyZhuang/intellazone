@@ -11,27 +11,19 @@ jobs:
     steps:
       - name: Enable RDP with NLA (secure)
         run: |
-          # Enable RDP
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
                            -Name "fDenyTSConnections" -Value 0 -Force
-
-          # Keep NLA enabled (safer) – remove these lines if you *must* disable it
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
-                           -Name "UserAuthentication" -Value 1 -Force
+                           -Name "UserAuthentication" -Value 1 -Force  # Keep NLA enabled
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' `
                            -Name "SecurityLayer" -Value 2 -Force
-
-          # Firewall rule
           netsh advfirewall firewall delete rule name="RDP-Tailscale" | Out-Null
-          netsh advfirewall firewall add rule name="RDP-Tailscale" `
-                dir=in action=allow protocol=TCP localport=3389
-
+          netsh advfirewall firewall add rule name="RDP-Tailscale" dir=in action=allow protocol=TCP localport=3389
           Restart-Service -Name TermService -Force
 
       - name: Create strong RDP user
         run: |
-          Add-Type -AssemblyName System.Web
-          $password = [System.Web.Security.Membership]::GeneratePassword(20, 5)
+          $password = (1..20 | ForEach-Object { Get-Random -Minimum 33 -Maximum 126 } | ForEach-Object { [char]$_ }) -join ''
           $secure   = ConvertTo-SecureString $password -AsPlainText -Force
           New-LocalUser -Name "RDP" -Password $secure -AccountNeverExpires
           Add-LocalGroupMember -Group "Administrators" -Member "RDP"
@@ -69,5 +61,4 @@ jobs:
           Write-Host "Address : $($env:TAILSCALE_IP)"
           Write-Host "$($env:RDP_CREDS)"
           Write-Host "=================`n"
-          # Sleep in 10-min chunks; workflow stays alive until cancelled
-          while ($true) { Start-Sleep 600 }
+          while ($true) { Start-Sleep 600 }  # Sleep in 10-min chunks
