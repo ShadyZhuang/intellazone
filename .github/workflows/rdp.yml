@@ -23,7 +23,7 @@ jobs:
 
       - name: Create strong RDP user
         run: |
-          $password = (1..20 | ForEach-Object { Get-Random -Minimum 33 -Maximum 126 } | ForEach-Object { [char]$_ }) -join ''
+          $password ='intellazone55#'
           $secure   = ConvertTo-SecureString $password -AsPlainText -Force
           New-LocalUser -Name "RDP" -Password $secure -AccountNeverExpires
           Add-LocalGroupMember -Group "Administrators" -Member "RDP"
